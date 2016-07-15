@@ -5,6 +5,8 @@ var clickSpeed = 100;
 var autoBuyBuildings;
 var autoBuyUpgrades;
 var considerLuckyBonus;
+var autoClickGolden;
+var autoClickSeason;
 
 function initialize() {
 	elements = [];
@@ -28,6 +30,8 @@ function initialize() {
 	autoBuyBuildings = false;
 	autoBuyUpgrades = false;
 	considerLuckyBonus = false;
+	autoClickGolden = false;
+	autoClickSeason = false;
 	
 	//TODO: add buttons for auto buying and auto clicking
 }
@@ -51,7 +55,12 @@ function clickBest() {
 	});
 }
 function clickGold() {
-	goldenCookie.click();
+	if (goldenCookie.style.display != "none") {
+		goldenCookie.click();
+	}
+	if (autoClickGolden === true) {
+		setTimeout(clickGold, 1500);
+	}
 }
 function buyUpgrades() {
 	var myUpgrades = document.getElementById('upgrades').getElementsByClassName('upgrade enabled');
@@ -67,7 +76,7 @@ function setClicksPerSecond(number) {
 }
 
 function clickCookie() {
-	cookie.click();
+	Game.ClickCookie();
 	cookieClicking = setTimeout(clickCookie, clickSpeed);
 }
 
@@ -77,4 +86,31 @@ function startClicking() {
 
 function stopClicking() {
 	clearTimeout(cookieClicking);
+}
+
+function startAutoClickGold() {
+	autoClickGolden = true;
+	clickGold();
+}
+
+function stopAutoClickGold() {
+	autoClickGolden = false; //TODO: make timeout variable and clear it
+}
+
+function clickSeason() {
+	if (seasonPopup.style.display != "none") {
+		seasonPopup.click();
+	}
+	if (autoClickSeason === true) {
+		setTimeout(clickSeason, 5000);
+	}
+}
+
+function startAutoClickSeason() {
+	autoClickSeason = true;
+	clickSeason();
+}
+
+function stopAutoClickSeason() {
+	autoClickSeason = false; //TODO: make timeout variable and clear it
 }
