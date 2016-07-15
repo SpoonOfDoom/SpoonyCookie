@@ -1,5 +1,4 @@
 var elements;
-var cookie;
 var cookieClicking;
 var clickSpeed = 100;
 var autoBuyBuildings;
@@ -9,23 +8,6 @@ var autoClickGolden;
 var autoClickSeason;
 
 function initialize() {
-	elements = [];
-	elements.push(document.getElementById('productPrice0'));
-	elements.push(document.getElementById('productPrice1'));
-	elements.push(document.getElementById('productPrice2'));
-	elements.push(document.getElementById('productPrice3'));
-	elements.push(document.getElementById('productPrice4'));
-	elements.push(document.getElementById('productPrice5'));
-	elements.push(document.getElementById('productPrice6'));
-	elements.push(document.getElementById('productPrice7'));
-	elements.push(document.getElementById('productPrice8'));
-	elements.push(document.getElementById('productPrice9'));
-	elements.push(document.getElementById('productPrice10'));
-	elements.push(document.getElementById('productPrice11'));
-	elements.push(document.getElementById('productPrice12'));
-	elements.push(document.getElementById('productPrice13'));
-	
-	cookie = document.getElementById('bigCookie');
 	clickSpeed = 100;
 	autoBuyBuildings = false;
 	autoBuyUpgrades = false;
@@ -46,13 +28,36 @@ function getColor(element) {
 }
 
 function clickBest() {
-	elements.forEach(function(e) {
-		var colors = getColor(e);
-		if (colors[0] == 0 && colors[1] == 255 && colors[2] == 0) {
-			//Span is green, i.e. this is the most cost effective according to Cookie Monster
-			e.click();
+	var minPP = Infinity;
+	var index;
+	for (var o in CM.Cache.Objects) {
+		if (CM.Cache.Objects[o].pp < minPP) {
+			minPP = CM.Cache.Objects[o].pp;
+			index = o;
 		}
-	});
+	}
+	var obj = Game.Objects[index];
+	var poor = true;
+	if (Game.Objects[index].price < Game.cookies) {
+		Game.Objects[index].buy();
+		poor = false; //If we can afford to buy the best PP building, we don't consider ourselves poor.
+	}
+	if (autoBuyBuildings) {
+		var time = 500;
+		if (poor) {
+			time = 10000; //If we're poor, we should save up a bit instead of trying again in half a second.
+		}
+		setTimeout(clickBest, time);
+	}
+}
+
+function startBuyingBuildings() {
+	autoBuyBuildings = true;
+	clickBest();
+}
+
+function stopBuyingBuildings() {
+	autoBuyBuildings = false;
 }
 function clickGold() {
 	if (goldenCookie.style.display != "none") {
@@ -94,7 +99,7 @@ function startAutoClickGold() {
 }
 
 function stopAutoClickGold() {
-	autoClickGolden = false; //TODO: make timeout variable and clear it
+	autoClickGolden = false; //TODO: make timeout variable and clear it?
 }
 
 function clickSeason() {
@@ -112,5 +117,5 @@ function startAutoClickSeason() {
 }
 
 function stopAutoClickSeason() {
-	autoClickSeason = false; //TODO: make timeout variable and clear it
+	autoClickSeason = false; //TODO: make timeout variable and clear it?
 }
