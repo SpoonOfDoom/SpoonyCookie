@@ -1,10 +1,11 @@
 var cookieClicking;
-var clickSpeed = 100;
+var clickSpeed;
 var autoBuyBuildings;
 var autoBuyUpgrades;
 var considerLuckyBonus;
 var autoClickGolden;
 var autoClickSeason;
+var autoClickCookie;
 
 function initialize() {
 	setClicksPerSecond(60);
@@ -13,6 +14,7 @@ function initialize() {
 	considerLuckyBonus = false;
 	autoClickGolden = false;
 	autoClickSeason = false;
+	autoClickCookie = false;
 	
 	//TODO: add buttons for auto buying and auto clicking
 }
@@ -76,38 +78,37 @@ function clickSeason() {
 	}
 }
 
-//TODO: merge this start/stop mess into single toggleX() functions, so that I may hold on to my sanity a tiny bit longer
-function startClicking() {
-	cookieClicking = setTimeout(clickCookie, clickSpeed);
+function toggleClicking() {
+	if (cookieClicking) {
+		clearTimeout(cookieClicking);
+	} else {
+		clickCookie();
+	}
 }
 
-function stopClicking() {
-	clearTimeout(cookieClicking);
+function toggleBuyingBuildings() {
+	if (autoBuyBuildings) {
+		autoBuyBuildings = false;
+	} else {
+		autoBuyBuildings = true;
+		clickBestBuilding();
+	}
 }
 
-function startBuyingBuildings() {
-	autoBuyBuildings = true;
-	clickBestBuilding();
+function toggleAutoClickGold() {
+	if (autoClickGolden) {
+		autoClickGolden = false;
+	} else {
+		autoClickGolden = true;
+		clickGold();
+	}
 }
 
-function stopBuyingBuildings() {
-	autoBuyBuildings = false; //TODO: make timeout variable and clear it to prevent potentially unwanted "one last execution" syndrome?
-}
-
-function startAutoClickGold() {
-	autoClickGolden = true;
-	clickGold();
-}
-
-function stopAutoClickGold() {
-	autoClickGolden = false; //TODO: make timeout variable and clear it to prevent potentially unwanted "one last execution" syndrome?
-}
-
-function startAutoClickSeason() {
-	autoClickSeason = true;
-	clickSeason();
-}
-
-function stopAutoClickSeason() {
-	autoClickSeason = false; //TODO: make timeout variable and clear it to prevent potentially unwanted "one last execution" syndrome?
+function toggleAutoClickSeason() {
+	if (autoClickSeason) {
+		autoClickSeason = false;
+	} else {
+		autoClickSeason = true;
+		clickSeason();
+	}
 }
