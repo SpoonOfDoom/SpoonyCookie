@@ -4,7 +4,7 @@ var autoBuyBuildings;
 var autoBuyUpgrades;
 var considerLuckyBonus;
 var autoClickGolden;
-var autoClickSeason;
+var autoClickReindeer;
 var autoClickCookie;
 
 function initialize() {
@@ -43,8 +43,10 @@ function clickBestBuilding() {
 }
 
 function clickGold() {
-	if (goldenCookie.style.display != "none") {
-		goldenCookie.click();
+	for (var i in Game.shimmers) {
+		if (Game.shimmers[i].type == "golden") {
+			Game.shimmers[i].pop();
+		}
 	}
 	if (autoClickGolden === true) {
 		setTimeout(clickGold, 1500);
@@ -69,12 +71,14 @@ function clickCookie() { //Either redo this or redo the other setTimeouts, so th
 	cookieClicking = setTimeout(clickCookie, clickSpeed); //TODO: Why doesn't the clickspeed work as intended? I get that it's not 100% accurate, but the Average Cookie Clicks Per Second are all over the place, sometimes decreasing when they should be increasing, or the other way around. While I was typing this comment, I've seen them go from 40 to 18 and back to 38 without anything even being changed.
 }
 
-function clickSeason() {
-	if (seasonPopup.style.display != "none") {
-		seasonPopup.click();
+function clickReindeer() {
+	for (var i in Game.shimmers) {
+		if (Game.shimmers[i].type == "reindeer") {
+			Game.shimmers[i].pop();
+		}
 	}
-	if (autoClickSeason === true) {
-		setTimeout(clickSeason, 5000); //TODO: this only works if they stay long enough, after buying the upgrades - else they might escape. I should check what upgrades are owned and adjust the time accordingly.
+	if (autoClickReindeer === true) {
+		setTimeout(clickReindeer, 5000); //TODO: this only works if they stay long enough, after buying the upgrades - else they might escape. I should check what upgrades are owned and adjust the time accordingly.
 	}
 }
 
@@ -104,11 +108,11 @@ function toggleAutoClickGold() {
 	}
 }
 
-function toggleAutoClickSeason() {
-	if (autoClickSeason) {
-		autoClickSeason = false;
+function toggleAutoClickReindeer() {
+	if (autoClickReindeer) {
+		autoClickReindeer = false;
 	} else {
-		autoClickSeason = true;
-		clickSeason();
+		autoClickReindeer = true;
+		clickReindeer();
 	}
 }
