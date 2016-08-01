@@ -29,9 +29,13 @@ function clickBestBuilding() {
 		}
 	}
 	var poor = true;
-	if (Game.Objects[index].price < Game.cookies) {
-		Game.Objects[index].buy();
-		poor = false; //If we can afford to buy the best PP building, we don't consider ourselves poor.
+	try { //try ... catch because sometimes Game.Objects[index] was undefined and everything crashed and burned. I can only assume that in some cases, index isn't set correctly in the loop above, but I haven't yet been able to reproduce the exact circumstances.
+		if (Game.Objects[index].price < Game.cookies) {
+			Game.Objects[index].buy();
+			poor = false; //If we can afford to buy the best PP building, we don't consider ourselves poor.
+		}
+	} catch (e) {
+		console.log(e.message);
 	}
 	if (autoBuyBuildings) {
 		var time = 500;
@@ -116,3 +120,5 @@ function toggleAutoClickReindeer() {
 		clickReindeer();
 	}
 }
+
+initialize();
