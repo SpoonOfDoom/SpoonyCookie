@@ -16,6 +16,12 @@ function initialize() {
 	autoClickSeason = false;
 	autoClickCookie = false;
 	
+	if (Game.prefs.popups) {
+		Game.Popup('SpoonyCookie loaded!');
+	}
+	else {
+		Game.Notify('SpoonyCookie loaded!', '', '', 1, 1);
+	}
 	//TODO: add buttons for auto buying and auto clicking
 }
 
@@ -67,7 +73,7 @@ function buyUpgrades() {
 }
 
 function setClicksPerSecond(number) {
-	clickSpeed = 1000/number; //TODO: Why doesn't the clickspeed work as intended?
+	clickSpeed = 1000/number; //TODO: Why doesn't the clickspeed work as intended? Might have to do with setTimeout vs setInterval.
 }
 
 function clickCookie() { //Either redo this or redo the other setTimeouts, so that they're all somewhat consistent.
