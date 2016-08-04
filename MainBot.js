@@ -8,21 +8,66 @@ var autoClickReindeer;
 var autoClickCookie;
 
 function initialize() {
-	setClicksPerSecond(60);
 	autoBuyBuildings = false;
 	autoBuyUpgrades = false;
 	considerLuckyBonus = false;
 	autoClickGolden = false;
-	autoClickSeason = false;
+	autoClickReindeer = false;
 	autoClickCookie = false;
-	
+	cookieClicking = false;
+	setClicksPerSecond(60);
+
+	var SCUpdateMenu = Game.UpdateMenu;
+	Game.UpdateMenu = function() {
+		SCUpdateMenu();
+		addOptionButtons();
+	}
+
 	if (Game.prefs.popups) {
 		Game.Popup('SpoonyCookie loaded!');
 	}
 	else {
 		Game.Notify('SpoonyCookie loaded!', '', '', 1, 1);
 	}
-	//TODO: add buttons for auto buying and auto clicking
+}
+
+function addOptionButtons() {
+	if (Game.onMenu == 'prefs') {
+		var fragment = document.createDocumentFragment();
+		var title = document.createElement('div');
+		title.className = 'listing';
+		title.style.cssText = 'padding: 5px 16px; opacity: 0.7; font-size: 17px; font-family: "Kavoon",Georgia,serif;';
+		title.textContent = 'SpoonyCookie Toggles';
+		fragment.appendChild(title);
+		var btnAutoClickGold = createButton('SCToggleAutoClickGold', 'Golden Cookies', 'Automatically click golden cookies', toggleAutoClickGold, autoClickGolden);
+		var btnAutoClickReindeer = createButton('SCToggleAutoClickReindeer', 'Reindeer', 'Automatically click reindeer', toggleAutoClickReindeer, autoClickReindeer);
+		var btnAutoBuyBestBuilding = createButton('SCToggleAutoBuyBestBuilding', 'Buy Best Building', 'Automatically buy the best building when you can afford it', toggleBuyingBuildings, autoBuyBuildings);
+		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click golden cookies', toggleClicking, cookieClicking);
+		fragment.appendChild(btnAutoClickGold);
+		fragment.appendChild(btnAutoClickReindeer);
+		fragment.appendChild(btnAutoBuyBestBuilding);
+		fragment.appendChild(btnAutoClickBigCookie);
+		document.getElementById('menu').childNodes[2].insertBefore(fragment, document.getElementById('menu').childNodes[2].childNodes[document.getElementById('menu').childNodes[2].childNodes.length - 1]);
+	}
+}
+
+function createButton(name, btnText, labelText, toCall, state) {
+	var div = document.createElement('div');
+	div.className = 'listing';
+	var a = document.createElement('a');
+	a.className = 'option';
+	if (state === false) {
+		a.className += ' off';
+	}
+	
+	a.id = name;
+	a.onclick = function() {toCall(); this.classList.toggle('off');};
+	a.textContent = btnText;
+	div.appendChild(a);
+	var label = document.createElement('label');
+	label.textContent = labelText;
+	div.appendChild(label);
+	return div;
 }
 
 function clickBestBuilding() {
@@ -95,6 +140,7 @@ function clickReindeer() {
 function toggleClicking() {
 	if (cookieClicking) {
 		clearTimeout(cookieClicking);
+		cookieClicking = false;
 	} else {
 		clickCookie();
 	}
