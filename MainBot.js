@@ -42,7 +42,7 @@ function addOptionButtons() {
 		var btnAutoClickGold = createButton('SCToggleAutoClickGold', 'Golden Cookies', 'Automatically click golden cookies', toggleAutoClickGold, autoClickGolden);
 		var btnAutoClickReindeer = createButton('SCToggleAutoClickReindeer', 'Reindeer', 'Automatically click reindeer', toggleAutoClickReindeer, autoClickReindeer);
 		var btnAutoBuyBestBuilding = createButton('SCToggleAutoBuyBestBuilding', 'Buy Best Building', 'Automatically buy the best building when you can afford it', toggleBuyingBuildings, autoBuyBuildings);
-		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click golden cookies', toggleClicking, cookieClicking);
+		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click the big cookie', toggleClicking, cookieClicking);
 		fragment.appendChild(btnAutoClickGold);
 		fragment.appendChild(btnAutoClickReindeer);
 		fragment.appendChild(btnAutoBuyBestBuilding);
@@ -56,13 +56,16 @@ function createButton(name, btnText, labelText, toCall, state) {
 	div.className = 'listing';
 	var a = document.createElement('a');
 	a.className = 'option';
-	if (state === false) {
-		a.className += ' off';
-	}
 	
 	a.id = name;
 	a.onclick = function() {toCall(); this.classList.toggle('off');};
 	a.textContent = btnText;
+	if (state === false) {
+		a.className += ' off';
+		a.textContent += ' OFF';
+	} else {
+		a.textContent += ' ON';
+	}
 	div.appendChild(a);
 	var label = document.createElement('label');
 	label.textContent = labelText;
@@ -141,7 +144,9 @@ function toggleClicking() {
 	if (cookieClicking) {
 		clearTimeout(cookieClicking);
 		cookieClicking = false;
+		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
 	} else {
+		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
 		clickCookie();
 	}
 }
@@ -149,8 +154,10 @@ function toggleClicking() {
 function toggleBuyingBuildings() {
 	if (autoBuyBuildings) {
 		autoBuyBuildings = false;
+		document.getElementById('SCToggleAutoBuyBestBuilding').textContent = document.getElementById('SCToggleAutoBuyBestBuilding').textContent.replace('ON', 'OFF');
 	} else {
 		autoBuyBuildings = true;
+		document.getElementById('SCToggleAutoBuyBestBuilding').textContent = document.getElementById('SCToggleAutoBuyBestBuilding').textContent.replace('ON', 'OFF');
 		clickBestBuilding();
 	}
 }
@@ -158,8 +165,10 @@ function toggleBuyingBuildings() {
 function toggleAutoClickGold() {
 	if (autoClickGolden) {
 		autoClickGolden = false;
+		document.getElementById('SCToggleAutoClickGold').textContent = document.getElementById('SCToggleAutoClickGold').textContent.replace('ON', 'OFF');
 	} else {
 		autoClickGolden = true;
+		document.getElementById('SCToggleAutoClickGold').textContent = document.getElementById('SCToggleAutoClickGold').textContent.replace('OFF', 'ON');
 		clickGold();
 	}
 }
@@ -167,8 +176,10 @@ function toggleAutoClickGold() {
 function toggleAutoClickReindeer() {
 	if (autoClickReindeer) {
 		autoClickReindeer = false;
+		document.getElementById('SCToggleAutoClickReindeer').textContent = document.getElementById('SCToggleAutoClickReindeer').textContent.replace('OFF', 'ON');
 	} else {
 		autoClickReindeer = true;
+		document.getElementById('SCToggleAutoClickReindeer').textContent = document.getElementById('SCToggleAutoClickReindeer').textContent.replace('OFF', 'ON');
 		clickReindeer();
 	}
 }
