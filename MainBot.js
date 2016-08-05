@@ -124,7 +124,7 @@ function setClicksPerSecond(number) {
 	clickSpeed = 1000/number; //TODO: Why doesn't the clickspeed work as intended? Might have to do with setTimeout vs setInterval.
 }
 
-function clickCookie() { //Either redo this or redo the other setTimeouts, so that they're all somewhat consistent.
+function clickCookie() {
 	Game.ClickCookie();
 	if (cookieClicking) {
 		setTimeout(clickCookie, clickSpeed); //TODO: Why doesn't the clickspeed work as intended? I get that it's not 100% accurate, but the Average Cookie Clicks Per Second are all over the place, sometimes decreasing when they should be increasing, or the other way around. While I was typing this comment, I've seen them go from 40 to 18 and back to 38 without anything even being changed.
@@ -147,7 +147,7 @@ function toggleClicking() {
 		cookieClicking = false;
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
 	} else {
-		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
+		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('OFF', 'ON');
 		cookieClicking = true;
 		clickCookie();
 	}
@@ -159,7 +159,7 @@ function toggleBuyingBuildings() {
 		document.getElementById('SCToggleAutoBuyBestBuilding').textContent = document.getElementById('SCToggleAutoBuyBestBuilding').textContent.replace('ON', 'OFF');
 	} else {
 		autoBuyBuildings = true;
-		document.getElementById('SCToggleAutoBuyBestBuilding').textContent = document.getElementById('SCToggleAutoBuyBestBuilding').textContent.replace('ON', 'OFF');
+		document.getElementById('SCToggleAutoBuyBestBuilding').textContent = document.getElementById('SCToggleAutoBuyBestBuilding').textContent.replace('OFF', 'ON');
 		clickBestBuilding();
 	}
 }
@@ -178,7 +178,7 @@ function toggleAutoClickGold() {
 function toggleAutoClickReindeer() {
 	if (autoClickReindeer) {
 		autoClickReindeer = false;
-		document.getElementById('SCToggleAutoClickReindeer').textContent = document.getElementById('SCToggleAutoClickReindeer').textContent.replace('OFF', 'ON');
+		document.getElementById('SCToggleAutoClickReindeer').textContent = document.getElementById('SCToggleAutoClickReindeer').textContent.replace('ON', 'OFF');
 	} else {
 		autoClickReindeer = true;
 		document.getElementById('SCToggleAutoClickReindeer').textContent = document.getElementById('SCToggleAutoClickReindeer').textContent.replace('OFF', 'ON');
