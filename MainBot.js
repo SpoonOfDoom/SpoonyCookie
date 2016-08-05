@@ -126,7 +126,9 @@ function setClicksPerSecond(number) {
 
 function clickCookie() { //Either redo this or redo the other setTimeouts, so that they're all somewhat consistent.
 	Game.ClickCookie();
-	cookieClicking = setTimeout(clickCookie, clickSpeed); //TODO: Why doesn't the clickspeed work as intended? I get that it's not 100% accurate, but the Average Cookie Clicks Per Second are all over the place, sometimes decreasing when they should be increasing, or the other way around. While I was typing this comment, I've seen them go from 40 to 18 and back to 38 without anything even being changed.
+	if (cookieClicking) {
+		setTimeout(clickCookie, clickSpeed); //TODO: Why doesn't the clickspeed work as intended? I get that it's not 100% accurate, but the Average Cookie Clicks Per Second are all over the place, sometimes decreasing when they should be increasing, or the other way around. While I was typing this comment, I've seen them go from 40 to 18 and back to 38 without anything even being changed.
+	}
 }
 
 function clickReindeer() {
@@ -142,11 +144,11 @@ function clickReindeer() {
 
 function toggleClicking() {
 	if (cookieClicking) {
-		clearTimeout(cookieClicking);
 		cookieClicking = false;
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
 	} else {
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
+		cookieClicking = true;
 		clickCookie();
 	}
 }
