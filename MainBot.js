@@ -1,21 +1,26 @@
-var cookieClicking;
+var configKey = 'SCConfig';
 var clickSpeed;
 var autoBuyBuildings;
 var autoBuyUpgrades;
+var buyUpgradesWInfinitePP; //Should we buy upgrades with infinite PP, for example cursor upgrades?
 var considerLuckyBonus;
 var autoClickGolden;
 var autoClickReindeer;
 var autoClickCookie;
+var switches;
 
 function initialize() {
 	autoBuyBuildings = false;
 	autoBuyUpgrades = false;
+	buyUpgradesWInfinitePP = false;
 	considerLuckyBonus = false;
 	autoClickGolden = false;
 	autoClickReindeer = false;
 	autoClickCookie = false;
-	cookieClicking = false;
+	switches = [];
 	setClicksPerSecond(60);
+
+	loadConfig();
 
 	var SCUpdateMenu = Game.UpdateMenu;
 	Game.UpdateMenu = function() {
@@ -23,11 +28,62 @@ function initialize() {
 		addOptionButtons();
 	}
 
+	getSwitches();
+	if (autoBuyBuildings) {
+		clickBestBuilding();
+	}
+	if (autoBuyUpgrades) {
+		clickBestUpgrade();
+	}
+	if (autoClickGolden) {
+		clickGold();
+	}
+	if (autoClickReindeer) {
+		clickReindeer();
+	}
+	if (autoClickCookie) {
+		clickCookie();
+	}
 	if (Game.prefs.popups) {
 		Game.Popup('SpoonyCookie loaded!');
 	}
 	else {
 		Game.Notify('SpoonyCookie loaded!', '', '', 1, 1);
+	}
+}
+
+function saveConfig() {
+	var config = {};
+	config["autoBuyBuildings"] = autoBuyBuildings;
+	config["autoBuyUpgrades"] = autoBuyUpgrades;
+	config["buyUpgradesWInfinitePP"] = buyUpgradesWInfinitePP;
+	config["autoClickCookie"] = autoClickCookie;
+	config["autoClickGolden"] = autoClickGolden;
+	config["autoClickReindeer"] = autoClickReindeer;
+	config["clickSpeed"] = clickSpeed;
+	config["considerLuckyBonus"] = considerLuckyBonus;
+
+	localStorage.setItem(configKey, JSON.stringify(config));
+}
+
+function loadConfig() {
+	if (localStorage.getItem(configKey) != null) {
+		var config = JSON.parse(localStorage.getItem(configKey));
+		autoBuyBuildings = config["autoBuyBuildings"];
+		autoBuyUpgrades = config["autoBuyUpgrades"];
+		buyUpgradesWInfinitePP = config["buyUpgradesWInfinitePP"];
+		autoClickCookie = config["autoClickCookie"];
+		autoClickGolden = config["autoClickGolden"];
+		autoClickReindeer = config["autoClickReindeer"];
+		clickSpeed = config["clickSpeed"];
+		considerLuckyBonus = config["considerLuckyBonus"];
+	}
+}
+
+function getSwitches() {
+	for (var key in Game.UpgradesByPool['toggle']) {
+		var upgradeName = Game.UpgradesByPool['toggle'][key].name;
+		switches.push(upgradeName);
 	}
 }
 
@@ -42,10 +98,14 @@ function addOptionButtons() {
 		var btnAutoClickGold = createButton('SCToggleAutoClickGold', 'Golden Cookies', 'Automatically click golden cookies', toggleAutoClickGold, autoClickGolden);
 		var btnAutoClickReindeer = createButton('SCToggleAutoClickReindeer', 'Reindeer', 'Automatically click reindeer', toggleAutoClickReindeer, autoClickReindeer);
 		var btnAutoBuyBestBuilding = createButton('SCToggleAutoBuyBestBuilding', 'Buy Best Building', 'Automatically buy the best building when you can afford it', toggleBuyingBuildings, autoBuyBuildings);
-		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click the big cookie', toggleClicking, cookieClicking);
+		var btnAutoBuyBestUpgrade = createButton('SCToggleAutoBuyBestUpgrade', 'Buy Best Upgrade', 'Automatically buy the best upgrade when you can afford it', toggleBuyingUpgrades, autoBuyUpgrades);
+		var btnBuyInfinitePPUpgrades = createButton('SCToggleInfinitePPUpgrades', 'Buy Infinite PP Upgrades', 'Buy upgrades that have infinite PP, for example cursor upgrades', toggleBuyInfinitePPUpgrades, buyUpgradesWInfinitePP);
+		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click the big cookie', toggleClicking, autoClickCookie);
 		fragment.appendChild(btnAutoClickGold);
 		fragment.appendChild(btnAutoClickReindeer);
 		fragment.appendChild(btnAutoBuyBestBuilding);
+		fragment.appendChild(btnAutoBuyBestUpgrade);
+		fragment.appendChild(btnBuyInfinitePPUpgrades);
 		fragment.appendChild(btnAutoClickBigCookie);
 		document.getElementById('menu').childNodes[2].insertBefore(fragment, document.getElementById('menu').childNodes[2].childNodes[document.getElementById('menu').childNodes[2].childNodes.length - 1]);
 	}
@@ -73,6 +133,48 @@ function createButton(name, btnText, labelText, toCall, state) {
 	return div;
 }
 
+function clickBestUpgrade() {
+	var minPP = Infinity;
+	var index;
+	var poor = true;
+	var firstInfPP;
+
+	for (var i = 0; i < Game.UpgradesInStore.length; i++) {
+		var upgradeName = Game.UpgradesInStore[i].name;
+		if (switches.includes(upgradeName)) {
+			continue;
+		}
+		if (firstInfPP === undefined && CM.Cache.Upgrades[upgradeName].pp == Infinity) {
+			firstInfPP = upgradeName;
+		}
+		if (CM.Cache.Upgrades[upgradeName].pp < minPP) {
+			minPP = CM.Cache.Upgrades[upgradeName].pp;
+			index = upgradeName;
+		}
+	}
+	if (index === undefined && buyUpgradesWInfinitePP) { // If we haven't found an upgrade without infinite PP, we'll choose the first one of those.
+		index = firstInfPP;
+	}
+	if (index !== undefined) {
+		try {
+			if (Game.Upgrades[index].getPrice() < Game.cookies) {
+				Game.Upgrades[index].buy();
+				poor = false; //If we can afford to buy the best PP upgrade, we don't consider ourselves poor.
+			}
+		} catch (e) {
+			console.log("Can't buy Upgrade " + index + ": " + e.message);
+		}
+	}
+	
+	if (autoBuyUpgrades) {
+		var time = 500;
+		if (poor) {
+			time = 10000; //If we're poor (or there's nothing to buy), we should save up a bit instead of trying again in half a second.
+		}
+		setTimeout(clickBestUpgrade, time);
+	}
+}
+
 function clickBestBuilding() {
 	var minPP = Infinity;
 	var index;
@@ -89,7 +191,7 @@ function clickBestBuilding() {
 			poor = false; //If we can afford to buy the best PP building, we don't consider ourselves poor.
 		}
 	} catch (e) {
-		console.log(e.message);
+		console.log("Can't buy building " + index + ": " + e.message);
 	}
 	if (autoBuyBuildings) {
 		var time = 500;
@@ -111,23 +213,14 @@ function clickGold() {
 	}
 }
 
-function buyUpgrades() {
-	var myUpgrades = document.getElementById('upgrades').getElementsByClassName('upgrade enabled'); //TODO: Holy shit, I hope nobody sees this. What was I thinking? Replace with actual Game.UpgradesInStore.
-	if (myUpgrades.length > 0) {
-		myUpgrades[0].click();
-		setTimeout(buyUpgrades, 500);
-	}
-	//TODO: if autobuy, set timeout for larger time
-}
-
 function setClicksPerSecond(number) {
-	clickSpeed = 1000/number; //TODO: Why doesn't the clickspeed work as intended? Might have to do with setTimeout vs setInterval.
+	clickSpeed = 1000/number;
 }
 
 function clickCookie() {
 	Game.ClickCookie();
-	if (cookieClicking) {
-		setTimeout(clickCookie, clickSpeed); //TODO: Why doesn't the clickspeed work as intended? I get that it's not 100% accurate, but the Average Cookie Clicks Per Second are all over the place, sometimes decreasing when they should be increasing, or the other way around. While I was typing this comment, I've seen them go from 40 to 18 and back to 38 without anything even being changed.
+	if (autoClickCookie) {
+		setTimeout(clickCookie, clickSpeed); //TODO: Dynamically calculate timeout time to adjust for execution time of function. 
 	}
 }
 
@@ -143,14 +236,38 @@ function clickReindeer() {
 }
 
 function toggleClicking() {
-	if (cookieClicking) {
-		cookieClicking = false;
+	if (autoClickCookie) {
+		autoClickCookie = false;
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
 	} else {
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('OFF', 'ON');
-		cookieClicking = true;
+		autoClickCookie = true;
 		clickCookie();
 	}
+	saveConfig();
+}
+
+function toggleBuyingUpgrades() {
+	if (autoBuyUpgrades) {
+		autoBuyUpgrades = false;
+		document.getElementById('SCToggleAutoBuyBestUpgrade').textContent = document.getElementById('SCToggleAutoBuyBestUpgrade').textContent.replace('ON', 'OFF');
+	} else {
+		autoBuyUpgrades = true;
+		document.getElementById('SCToggleAutoBuyBestUpgrade').textContent = document.getElementById('SCToggleAutoBuyBestUpgrade').textContent.replace('OFF', 'ON');
+		clickBestUpgrade();
+	}
+	saveConfig();
+}
+
+function toggleBuyInfinitePPUpgrades() {
+	if (buyUpgradesWInfinitePP) {
+		buyUpgradesWInfinitePP = false;
+		document.getElementById('SCToggleInfinitePPUpgrades').textContent = document.getElementById('SCToggleInfinitePPUpgrades').textContent.replace('ON', 'OFF');
+	} else {
+		buyUpgradesWInfinitePP = true;
+		document.getElementById('SCToggleInfinitePPUpgrades').textContent = document.getElementById('SCToggleInfinitePPUpgrades').textContent.replace('OFF', 'ON');
+	}
+	saveConfig();
 }
 
 function toggleBuyingBuildings() {
@@ -162,6 +279,7 @@ function toggleBuyingBuildings() {
 		document.getElementById('SCToggleAutoBuyBestBuilding').textContent = document.getElementById('SCToggleAutoBuyBestBuilding').textContent.replace('OFF', 'ON');
 		clickBestBuilding();
 	}
+	saveConfig();
 }
 
 function toggleAutoClickGold() {
@@ -173,6 +291,7 @@ function toggleAutoClickGold() {
 		document.getElementById('SCToggleAutoClickGold').textContent = document.getElementById('SCToggleAutoClickGold').textContent.replace('OFF', 'ON');
 		clickGold();
 	}
+	saveConfig();
 }
 
 function toggleAutoClickReindeer() {
@@ -184,6 +303,7 @@ function toggleAutoClickReindeer() {
 		document.getElementById('SCToggleAutoClickReindeer').textContent = document.getElementById('SCToggleAutoClickReindeer').textContent.replace('OFF', 'ON');
 		clickReindeer();
 	}
+	saveConfig();
 }
 
 initialize();
