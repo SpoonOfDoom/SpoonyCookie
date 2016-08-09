@@ -1,4 +1,4 @@
-var cookieClicking;
+var configKey = 'SCConfig';
 var clickSpeed;
 var autoBuyBuildings;
 var autoBuyUpgrades;
@@ -17,9 +17,10 @@ function initialize() {
 	autoClickGolden = false;
 	autoClickReindeer = false;
 	autoClickCookie = false;
-	cookieClicking = false;
 	switches = [];
 	setClicksPerSecond(60);
+
+	loadConfig();
 
 	var SCUpdateMenu = Game.UpdateMenu;
 	Game.UpdateMenu = function() {
@@ -28,12 +29,54 @@ function initialize() {
 	}
 
 	getSwitches();
-
+	if (autoBuyBuildings) {
+		clickBestBuilding();
+	}
+	if (autoBuyUpgrades) {
+		clickBestUpgrade();
+	}
+	if (autoClickGolden) {
+		clickGold();
+	}
+	if (autoClickReindeer) {
+		clickReindeer();
+	}
+	if (autoClickCookie) {
+		clickCookie();
+	}
 	if (Game.prefs.popups) {
 		Game.Popup('SpoonyCookie loaded!');
 	}
 	else {
 		Game.Notify('SpoonyCookie loaded!', '', '', 1, 1);
+	}
+}
+
+function saveConfig() {
+	var config = {};
+	config["autoBuyBuildings"] = autoBuyBuildings;
+	config["autoBuyUpgrades"] = autoBuyUpgrades;
+	config["buyUpgradesWInfinitePP"] = buyUpgradesWInfinitePP;
+	config["autoClickCookie"] = autoClickCookie;
+	config["autoClickGolden"] = autoClickGolden;
+	config["autoClickReindeer"] = autoClickReindeer;
+	config["clickSpeed"] = clickSpeed;
+	config["considerLuckyBonus"] = considerLuckyBonus;
+
+	localStorage.setItem(configKey, JSON.stringify(config));
+}
+
+function loadConfig() {
+	if (localStorage.getItem(configKey) != null) {
+		var config = JSON.parse(localStorage.getItem(configKey));
+		autoBuyBuildings = config["autoBuyBuildings"];
+		autoBuyUpgrades = config["autoBuyUpgrades"];
+		buyUpgradesWInfinitePP = config["buyUpgradesWInfinitePP"];
+		autoClickCookie = config["autoClickCookie"];
+		autoClickGolden = config["autoClickGolden"];
+		autoClickReindeer = config["autoClickReindeer"];
+		clickSpeed = config["clickSpeed"];
+		considerLuckyBonus = config["considerLuckyBonus"];
 	}
 }
 
@@ -57,7 +100,7 @@ function addOptionButtons() {
 		var btnAutoBuyBestBuilding = createButton('SCToggleAutoBuyBestBuilding', 'Buy Best Building', 'Automatically buy the best building when you can afford it', toggleBuyingBuildings, autoBuyBuildings);
 		var btnAutoBuyBestUpgrade = createButton('SCToggleAutoBuyBestUpgrade', 'Buy Best Upgrade', 'Automatically buy the best upgrade when you can afford it', toggleBuyingUpgrades, autoBuyUpgrades);
 		var btnBuyInfinitePPUpgrades = createButton('SCToggleInfinitePPUpgrades', 'Buy Infinite PP Upgrades', 'Buy upgrades that have infinite PP, for example cursor upgrades', toggleBuyInfinitePPUpgrades, buyUpgradesWInfinitePP);
-		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click the big cookie', toggleClicking, cookieClicking);
+		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click the big cookie', toggleClicking, autoClickCookie);
 		fragment.appendChild(btnAutoClickGold);
 		fragment.appendChild(btnAutoClickReindeer);
 		fragment.appendChild(btnAutoBuyBestBuilding);
@@ -176,7 +219,7 @@ function setClicksPerSecond(number) {
 
 function clickCookie() {
 	Game.ClickCookie();
-	if (cookieClicking) {
+	if (autoClickCookie) {
 		setTimeout(clickCookie, clickSpeed); //TODO: Dynamically calculate timeout time to adjust for execution time of function. 
 	}
 }
@@ -193,14 +236,15 @@ function clickReindeer() {
 }
 
 function toggleClicking() {
-	if (cookieClicking) {
-		cookieClicking = false;
+	if (autoClickCookie) {
+		autoClickCookie = false;
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('ON', 'OFF');
 	} else {
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('OFF', 'ON');
-		cookieClicking = true;
+		autoClickCookie = true;
 		clickCookie();
 	}
+	saveConfig();
 }
 
 function toggleBuyingUpgrades() {
@@ -212,6 +256,7 @@ function toggleBuyingUpgrades() {
 		document.getElementById('SCToggleAutoBuyBestUpgrade').textContent = document.getElementById('SCToggleAutoBuyBestUpgrade').textContent.replace('OFF', 'ON');
 		clickBestUpgrade();
 	}
+	saveConfig();
 }
 
 function toggleBuyInfinitePPUpgrades() {
@@ -222,6 +267,7 @@ function toggleBuyInfinitePPUpgrades() {
 		buyUpgradesWInfinitePP = true;
 		document.getElementById('SCToggleInfinitePPUpgrades').textContent = document.getElementById('SCToggleInfinitePPUpgrades').textContent.replace('OFF', 'ON');
 	}
+	saveConfig();
 }
 
 function toggleBuyingBuildings() {
@@ -233,6 +279,7 @@ function toggleBuyingBuildings() {
 		document.getElementById('SCToggleAutoBuyBestBuilding').textContent = document.getElementById('SCToggleAutoBuyBestBuilding').textContent.replace('OFF', 'ON');
 		clickBestBuilding();
 	}
+	saveConfig();
 }
 
 function toggleAutoClickGold() {
@@ -244,6 +291,7 @@ function toggleAutoClickGold() {
 		document.getElementById('SCToggleAutoClickGold').textContent = document.getElementById('SCToggleAutoClickGold').textContent.replace('OFF', 'ON');
 		clickGold();
 	}
+	saveConfig();
 }
 
 function toggleAutoClickReindeer() {
@@ -255,6 +303,7 @@ function toggleAutoClickReindeer() {
 		document.getElementById('SCToggleAutoClickReindeer').textContent = document.getElementById('SCToggleAutoClickReindeer').textContent.replace('OFF', 'ON');
 		clickReindeer();
 	}
+	saveConfig();
 }
 
 initialize();
