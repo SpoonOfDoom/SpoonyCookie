@@ -38,8 +38,8 @@ function initialize() {
 }
 
 function getSwitches() {
-	for (var index = 0; index < 8; index++) {
-		var upgradeName = Game.UpgradesInStore[index].name;
+	for (var key in Game.UpgradesByPool['toggle']) {
+		var upgradeName = Game.UpgradesByPool['toggle'][key].name;
 		switches.push(upgradeName);
 	}
 }
@@ -94,27 +94,32 @@ function clickBestUpgrade() {
 	var minPP = Infinity;
 	var index;
 	var poor = true;
+	var firstInfPP;
 
-	if (Game.UpgradesInStore.length > 8) {
-		for (var i = 8; i < Game.UpgradesInStore.length; i++) {
-			var upgradeName = Game.UpgradesInStore[i].name;
-			if (CM.Cache.Upgrades[upgradeName].pp < minPP) {
-				minPP = CM.Cache.Upgrades[upgradeName].pp;
-				index = upgradeName;
-			}
+	for (var i = 0; i < Game.UpgradesInStore.length; i++) {
+		var upgradeName = Game.UpgradesInStore[i].name;
+		if (switches.includes(upgradeName)) {
+			continue;
 		}
-		if (index === undefined && buyUpgradesWInfinitePP) { // If we haven't found an upgrade to buy even though UpgradesInStore.length > 8, that means we have some upgrades with infinite PP.
-			index = Game.UpgradesInStore[8].name; //for now we'll just buy the first one.
+		if (firstInfPP === undefined && CM.Cache.Upgrades[upgradeName].pp == Infinity) {
+			firstInfPP = upgradeName;
 		}
-		if (index !== undefined) {
-			try {
-				if (Game.Upgrades[index].getPrice() < Game.cookies) {
-					Game.Upgrades[index].buy();
-					poor = false; //If we can afford to buy the best PP upgrade, we don't consider ourselves poor.
-				}
-			} catch (e) {
-				console.log(e.message);
+		if (CM.Cache.Upgrades[upgradeName].pp < minPP) {
+			minPP = CM.Cache.Upgrades[upgradeName].pp;
+			index = upgradeName;
+		}
+	}
+	if (index === undefined && buyUpgradesWInfinitePP) { // If we haven't found an upgrade without infinite PP, we'll choose the first one of those.
+		index = firstInfPP;
+	}
+	if (index !== undefined) {
+		try {
+			if (Game.Upgrades[index].getPrice() < Game.cookies) {
+				Game.Upgrades[index].buy();
+				poor = false; //If we can afford to buy the best PP upgrade, we don't consider ourselves poor.
 			}
+		} catch (e) {
+			console.log("Can't buy Upgrade " + index + ": " + e.message);
 		}
 	}
 	
@@ -143,7 +148,7 @@ function clickBestBuilding() {
 			poor = false; //If we can afford to buy the best PP building, we don't consider ourselves poor.
 		}
 	} catch (e) {
-		console.log(e.message);
+		console.log("Can't buy building " + index + ": " + e.message);
 	}
 	if (autoBuyBuildings) {
 		var time = 500;
@@ -166,13 +171,13 @@ function clickGold() {
 }
 
 function setClicksPerSecond(number) {
-	clickSpeed = 1000/number; //TODO: Why doesn't the clickspeed work as intended? Might have to do with setTimeout vs setInterval.
+	clickSpeed = 1000/number;
 }
 
 function clickCookie() {
 	Game.ClickCookie();
 	if (cookieClicking) {
-		setTimeout(clickCookie, clickSpeed); //TODO: Why doesn't the clickspeed work as intended? I get that it's not 100% accurate, but the Average Cookie Clicks Per Second are all over the place, sometimes decreasing when they should be increasing, or the other way around. While I was typing this comment, I've seen them go from 40 to 18 and back to 38 without anything even being changed.
+		setTimeout(clickCookie, clickSpeed); //TODO: Dynamically calculate timeout time to adjust for execution time of function. 
 	}
 }
 
