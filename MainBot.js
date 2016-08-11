@@ -1,9 +1,10 @@
 var configKey = 'SCConfig';
-var clickSpeed;
+var clickSpeed; //TODO: turn all of these into a config object to simplify saving and loading
 var autoBuyBuildings;
 var autoBuyUpgrades;
 var buyUpgradesWInfinitePP; //Should we buy upgrades with infinite PP, for example cursor upgrades?
 var considerLuckyBonus;
+var considerLuckyBonusFrenzy;
 var autoClickGolden;
 var autoClickReindeer;
 var autoClickCookie;
@@ -14,6 +15,7 @@ function initialize() {
 	autoBuyUpgrades = false;
 	buyUpgradesWInfinitePP = false;
 	considerLuckyBonus = false;
+	considerLuckyBonusFrenzy = false;
 	autoClickGolden = false;
 	autoClickReindeer = false;
 	autoClickCookie = false;
@@ -62,6 +64,7 @@ function saveConfig() {
 	config["autoClickReindeer"] = autoClickReindeer;
 	config["clickSpeed"] = clickSpeed;
 	config["considerLuckyBonus"] = considerLuckyBonus;
+	config["considerLuckyBonusFrenzy"] = considerLuckyBonusFrenzy;
 
 	localStorage.setItem(configKey, JSON.stringify(config));
 }
@@ -77,6 +80,7 @@ function loadConfig() {
 		autoClickReindeer = config["autoClickReindeer"];
 		clickSpeed = config["clickSpeed"];
 		considerLuckyBonus = config["considerLuckyBonus"];
+		considerLuckyBonusFrenzy = config["considerLuckyBonusFrenzy"];
 	}
 }
 
@@ -100,12 +104,17 @@ function addOptionButtons() {
 		var btnAutoBuyBestBuilding = createButton('SCToggleAutoBuyBestBuilding', 'Buy Best Building', 'Automatically buy the best building when you can afford it', toggleBuyingBuildings, autoBuyBuildings);
 		var btnAutoBuyBestUpgrade = createButton('SCToggleAutoBuyBestUpgrade', 'Buy Best Upgrade', 'Automatically buy the best upgrade when you can afford it', toggleBuyingUpgrades, autoBuyUpgrades);
 		var btnBuyInfinitePPUpgrades = createButton('SCToggleInfinitePPUpgrades', 'Buy Infinite PP Upgrades', 'Buy upgrades that have infinite PP, for example cursor upgrades', toggleBuyInfinitePPUpgrades, buyUpgradesWInfinitePP);
+		var btnConsiderLuckyBonus = createButton('SCToggleConsiderLuckyBonus', 'Consider Lucky Bonus Limit', 'Don\'t buy stuff if it puts you under the amount required for the "Lucky!" bonus.', toggleConsiderLucky, considerLuckyBonus);
+		var btnConsiderLuckyBonusFrenzy = createButton('SCToggleConsiderLuckyBonusFrenzy', 'Consider Lucky Bonus (Frenzy) Limit', 'Don\'t buy stuff if it puts you under the amount required for the "Lucky!" (Frenzy) bonus.', toggleConsiderLuckyFrenzy, considerLuckyBonusFrenzy);
 		var btnAutoClickBigCookie = createButton('SCToggleAutoClickBigCookie', 'Autoclick big cookie', 'Automatically click the big cookie', toggleClicking, autoClickCookie);
+		
 		fragment.appendChild(btnAutoClickGold);
 		fragment.appendChild(btnAutoClickReindeer);
 		fragment.appendChild(btnAutoBuyBestBuilding);
 		fragment.appendChild(btnAutoBuyBestUpgrade);
 		fragment.appendChild(btnBuyInfinitePPUpgrades);
+		fragment.appendChild(btnConsiderLuckyBonus);
+		fragment.appendChild(btnConsiderLuckyBonusFrenzy);
 		fragment.appendChild(btnAutoClickBigCookie);
 		document.getElementById('menu').childNodes[2].insertBefore(fragment, document.getElementById('menu').childNodes[2].childNodes[document.getElementById('menu').childNodes[2].childNodes.length - 1]);
 	}
@@ -133,6 +142,16 @@ function createButton(name, btnText, labelText, toCall, state) {
 	return div;
 }
 
+function luckyOkay (price) {
+	if (considerLuckyBonus || considerLuckyBonusFrenzy) {
+		var leftOver = Game.cookies - price;
+		if ( (considerLuckyBonus && leftOver < CM.Cache.Lucky) || (considerLuckyBonusFrenzy && leftOver < CM.Cache.LuckyFrenzy) ) {
+			return false;
+		}
+	}
+	return true;
+}
+
 function clickBestUpgrade() {
 	var minPP = Infinity;
 	var index;
@@ -157,7 +176,7 @@ function clickBestUpgrade() {
 	}
 	if (index !== undefined) {
 		try {
-			if (Game.Upgrades[index].getPrice() < Game.cookies) {
+			if (Game.Upgrades[index].getPrice() < Game.cookies && luckyOkay(Game.Upgrades[index].getPrice()) ) {
 				Game.Upgrades[index].buy();
 				poor = false; //If we can afford to buy the best PP upgrade, we don't consider ourselves poor.
 			}
@@ -178,7 +197,7 @@ function clickBestUpgrade() {
 function clickBestBuilding() {
 	var minPP = Infinity;
 	var index;
-	for (var o in CM.Cache.Objects) { //It took me an embarrasingly long time to realize that CM.Cache.Objects is, in fact, an object, not an array, and that array.map would not get me anywhere. I blame the Firefox console for telling blatantly lying and telling me it was an array. </rant>
+	for (var o in CM.Cache.Objects) {
 		if (CM.Cache.Objects[o].pp < minPP) {
 			minPP = CM.Cache.Objects[o].pp;
 			index = o;
@@ -186,7 +205,7 @@ function clickBestBuilding() {
 	}
 	var poor = true;
 	try { //try ... catch because sometimes Game.Objects[index] was undefined and everything crashed and burned. I can only assume that in some cases, index isn't set correctly in the loop above, but I haven't yet been able to reproduce the exact circumstances.
-		if (Game.Objects[index].price < Game.cookies) {
+		if (Game.Objects[index].price < Game.cookies && luckyOkay(Game.Objects[index].getPrice()) ) {
 			Game.Objects[index].buy();
 			poor = false; //If we can afford to buy the best PP building, we don't consider ourselves poor.
 		}
@@ -266,6 +285,28 @@ function toggleBuyInfinitePPUpgrades() {
 	} else {
 		buyUpgradesWInfinitePP = true;
 		document.getElementById('SCToggleInfinitePPUpgrades').textContent = document.getElementById('SCToggleInfinitePPUpgrades').textContent.replace('OFF', 'ON');
+	}
+	saveConfig();
+}
+
+function toggleConsiderLucky() {
+	if (considerLuckyBonus) {
+		considerLuckyBonus = false;
+		document.getElementById('SCToggleConsiderLuckyBonus').textContent = document.getElementById('SCToggleConsiderLuckyBonus').textContent.replace('ON', 'OFF');
+	} else {
+		considerLuckyBonus = true;
+		document.getElementById('SCToggleConsiderLuckyBonus').textContent = document.getElementById('SCToggleConsiderLuckyBonus').textContent.replace('OFF', 'ON');
+	}
+	saveConfig();
+}
+
+function toggleConsiderLuckyFrenzy() {
+	if (considerLuckyBonusFrenzy) {
+		considerLuckyBonusFrenzy = false;
+		document.getElementById('SCToggleConsiderLuckyBonusFrenzy').textContent = document.getElementById('SCToggleConsiderLuckyBonusFrenzy').textContent.replace('ON', 'OFF');
+	} else {
+		considerLuckyBonusFrenzy = true;
+		document.getElementById('SCToggleConsiderLuckyBonusFrenzy').textContent = document.getElementById('SCToggleConsiderLuckyBonusFrenzy').textContent.replace('OFF', 'ON');
 	}
 	saveConfig();
 }
