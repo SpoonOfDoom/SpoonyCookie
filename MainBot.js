@@ -2,6 +2,7 @@ var configKey = 'SCConfig';
 var clickSpeed; //TODO: turn all of these into a config object to simplify saving and loading
 var autoBuyBuildings;
 var autoBuyUpgrades;
+var autoBuyReloaded;
 var buyUpgradesWInfinitePP; //Should we buy upgrades with infinite PP, for example cursor upgrades?
 var considerLuckyBonus;
 var considerLuckyBonusFrenzy;
@@ -13,6 +14,7 @@ var switches;
 function initialize() {
 	autoBuyBuildings = false;
 	autoBuyUpgrades = false;
+	autoBuyReloaded = false;
 	buyUpgradesWInfinitePP = false;
 	considerLuckyBonus = false;
 	considerLuckyBonusFrenzy = false;
@@ -31,12 +33,17 @@ function initialize() {
 	}
 
 	getSwitches();
-	if (autoBuyBuildings) {
+	if (autoBuyReloaded) {
+		clickBestBuildingOrUpgrade();
+	} else {
+		if (autoBuyBuildings) {
 		clickBestBuilding();
+		}
+		if (autoBuyUpgrades) {
+			clickBestUpgrade();
+		}
 	}
-	if (autoBuyUpgrades) {
-		clickBestUpgrade();
-	}
+	
 	if (autoClickGolden) {
 		clickGold();
 	}
@@ -56,6 +63,7 @@ function initialize() {
 
 function saveConfig() {
 	var config = {};
+	config["autoBuyReloaded"] = autoBuyReloaded;
 	config["autoBuyBuildings"] = autoBuyBuildings;
 	config["autoBuyUpgrades"] = autoBuyUpgrades;
 	config["buyUpgradesWInfinitePP"] = buyUpgradesWInfinitePP;
@@ -74,6 +82,7 @@ function loadConfig() {
 		var config = JSON.parse(localStorage.getItem(configKey));
 		autoBuyBuildings = config["autoBuyBuildings"];
 		autoBuyUpgrades = config["autoBuyUpgrades"];
+		autoBuyReloaded = config["autoBuyReloaded"];
 		buyUpgradesWInfinitePP = config["buyUpgradesWInfinitePP"];
 		autoClickCookie = config["autoClickCookie"];
 		autoClickGolden = config["autoClickGolden"];
@@ -101,6 +110,7 @@ function addOptionButtons() {
 		fragment.appendChild(title);
 		var btnAutoClickGold = createButton('SCToggleAutoClickGold', 'Golden Cookies', 'Automatically click golden cookies', toggleAutoClickGold, autoClickGolden);
 		var btnAutoClickReindeer = createButton('SCToggleAutoClickReindeer', 'Reindeer', 'Automatically click reindeer', toggleAutoClickReindeer, autoClickReindeer);
+		var btnAutoBuyBestAnything = createButton('SCToggleAutoBuyBestAnything', 'Buy Best Anything', 'Automatically buy the best upgrade or building when you can afford it', toggleBuyingReloaded, autoBuyReloaded);
 		var btnAutoBuyBestBuilding = createButton('SCToggleAutoBuyBestBuilding', 'Buy Best Building', 'Automatically buy the best building when you can afford it', toggleBuyingBuildings, autoBuyBuildings);
 		var btnAutoBuyBestUpgrade = createButton('SCToggleAutoBuyBestUpgrade', 'Buy Best Upgrade', 'Automatically buy the best upgrade when you can afford it', toggleBuyingUpgrades, autoBuyUpgrades);
 		var btnBuyInfinitePPUpgrades = createButton('SCToggleInfinitePPUpgrades', 'Buy Infinite PP Upgrades', 'Buy upgrades that have infinite PP, for example cursor upgrades', toggleBuyInfinitePPUpgrades, buyUpgradesWInfinitePP);
@@ -110,6 +120,7 @@ function addOptionButtons() {
 		
 		fragment.appendChild(btnAutoClickGold);
 		fragment.appendChild(btnAutoClickReindeer);
+		fragment.appendChild(btnAutoBuyBestAnything);
 		fragment.appendChild(btnAutoBuyBestBuilding);
 		fragment.appendChild(btnAutoBuyBestUpgrade);
 		fragment.appendChild(btnBuyInfinitePPUpgrades);
@@ -221,6 +232,66 @@ function clickBestBuilding() {
 	}
 }
 
+function clickBestBuildingOrUpgrade() {
+	var minPP = Infinity;
+	var indexU;
+	var indexB;
+	var poor = true;
+	var firstInfPP;
+
+	for (var i = 0; i < Game.UpgradesInStore.length; i++) {
+		var upgradeName = Game.UpgradesInStore[i].name;
+		if (switches.includes(upgradeName)) {
+			continue;
+		}
+		if (firstInfPP === undefined && CM.Cache.Upgrades[upgradeName].pp == Infinity) {
+			firstInfPP = upgradeName;
+		}
+		if (CM.Cache.Upgrades[upgradeName].pp < minPP) {
+			minPP = CM.Cache.Upgrades[upgradeName].pp;
+			indexU = upgradeName;
+		}
+	}
+	if (indexU === undefined && buyUpgradesWInfinitePP) { // If we haven't found an upgrade without infinite PP, we'll choose the first one of those.
+		indexU = firstInfPP;
+	}
+		
+	for (var o in CM.Cache.Objects) {
+		if (CM.Cache.Objects[o].pp < minPP) {
+			minPP = CM.Cache.Objects[o].pp;
+			indexB = o;
+		}
+	}
+	
+	if (indexU !== undefined && indexB === undefined) {
+		try {
+			if (Game.Upgrades[indexU].getPrice() < Game.cookies && luckyOkay(Game.Upgrades[indexU].getPrice()) ) {
+				Game.Upgrades[indexU].buy();
+				poor = false; //If we can afford to buy the best PP upgrade, we don't consider ourselves poor.
+			}
+		} catch (e) {
+			console.log("Can't buy Upgrade " + indexU + ": " + e.message);
+		}
+	} else if (indexB !== undefined) {
+		try { //try ... catch because sometimes Game.Objects[index] was undefined and everything crashed and burned. I can only assume that in some cases, index isn't set correctly in the loop above, but I haven't yet been able to reproduce the exact circumstances.
+			if (Game.Objects[indexB].price < Game.cookies && luckyOkay(Game.Objects[indexB].getPrice()) ) {
+				Game.Objects[indexB].buy();
+				poor = false; //If we can afford to buy the best PP building, we don't consider ourselves poor.
+			}
+		} catch (e) {
+			console.log("Can't buy building " + index + ": " + e.message);
+		}
+	}
+	
+	if (autoBuyReloaded) {
+		var time = 500;
+		if (poor) {
+			time = 10000; //If we're poor, we should save up a bit instead of trying again in half a second.
+		}
+		setTimeout(clickBestBuildingOrUpgrade, time);
+	}
+}
+
 function clickGold() {
 	for (var i in Game.shimmers) {
 		if (Game.shimmers[i].type == "golden") {
@@ -262,6 +333,18 @@ function toggleClicking() {
 		document.getElementById('SCToggleAutoClickBigCookie').textContent = document.getElementById('SCToggleAutoClickBigCookie').textContent.replace('OFF', 'ON');
 		autoClickCookie = true;
 		clickCookie();
+	}
+	saveConfig();
+}
+
+function toggleBuyingReloaded() {
+	if (autoBuyReloaded) {
+		autoBuyReloaded = false;
+		document.getElementById('SCToggleAutoBuyBestAnything').textContent = document.getElementById('SCToggleAutoBuyBestAnything').textContent.replace('ON', 'OFF');
+	} else {
+		autoBuyReloaded = true;
+		document.getElementById('SCToggleAutoBuyBestAnything').textContent = document.getElementById('SCToggleAutoBuyBestAnything').textContent.replace('OFF', 'ON');
+		clickBestBuildingOrUpgrade();
 	}
 	saveConfig();
 }
