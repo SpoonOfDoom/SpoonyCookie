@@ -302,7 +302,6 @@ function clickBestBuilding() {
 // }
 
 function clickFortune() {
-	console.log("click Fortune!")
 	if (Game.TickerEffect.type == "fortune") {
 		Game.tickerL.click();
 	}
