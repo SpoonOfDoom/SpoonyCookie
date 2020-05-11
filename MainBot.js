@@ -301,6 +301,32 @@ function clickBestBuilding() {
 	// }
 // }
 
+
+function switchToSeason(newSeason) {
+	var targetName;
+	console.log("switching to " + newSeason);
+	switch (newSeason) {
+		case "halloween":
+			targetName = "Ghostly biscuit";
+			break;
+		case "valentines":
+			targetName = "Lovesick biscuit";
+			break;
+		case "christmas":
+			targetName = "Festive biscuit";
+			break;
+		case "easter":
+			targetName = "Bunny biscuit";
+			break;
+		case "fools":
+			targetName = "Fool's biscuit";
+			break;
+		default:
+			return;
+	}
+	Game.Upgrades[targetName].buy();
+}
+
 function clickFortune() {
 	if (Game.TickerEffect.type == "fortune") {
 		Game.tickerL.click();
