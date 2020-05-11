@@ -311,13 +311,15 @@ function clickFortune() {
 }
 
 function clickGold() {
-	for (var i in Game.shimmers) {
-		if (Game.shimmers[i].type == "golden") {
-			Game.shimmers[i].pop();
+	while (Game.shimmers.some(function(shimmer) {return shimmer.type == "golden";})) {
+		for (var i in Game.shimmers) {
+			if (Game.shimmers[i].type == "golden") {
+				Game.shimmers[i].pop();
+			}
 		}
 	}
 	if (autoClickGolden === true) {
-		setTimeout(clickGold, 1000);
+		setTimeout(clickGold, 500);
 	}
 }
 
